@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+// The connection of two nodes on a network to communicate with each other. The first node(socket fd) listens at port 8080 at an IP while the other node (socket new_fd) reaches out to the other to form a connection
+// Server makes the listening socket 
 
 int net_server() {
 
@@ -46,7 +48,7 @@ int net_server() {
     // listen for socket connections and limit the queue of incoming connections
     // socket and backlog para -> backlog describes the limit for the queue
 
-    // maximum backlog -> 128 (look up backlog more0)
+    // maximum kernel backlog -> 128 
     // backlog: number representing the size of the queue holding the pending connections while the server is waiting to accept a connection.
     if(!listen(fd, 2)){
         perror("listen failure");
@@ -61,9 +63,20 @@ int net_server() {
     }
     
     // ssize_t -> signed int type representing a count of bytes and returns -1
-    // read attempts to read byte data from fd socket into the buffer queue
+    // read attempts to read byte data from fd socket into the buffer queue; subtracting 1 from total buffer for null
     ssize_t read_data = read(fd, buffer, 1024 - 1);
+    printf("%s\n", buffer);
 
-       
+    // sending data to the client side (type ssize_t to send data in bytes) as a message
+    char* server_message = "Hello from server";
+    send(fd, server_message, strlen(server_message), 0);
+
+    printf("Server message sent\n");
+
+    // connected socket closed
+    close(new_fd);
+
+    // listen socket closed
+    close(fd);
     return 0;
 }
