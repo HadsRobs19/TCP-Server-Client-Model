@@ -3,11 +3,12 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 // The connection of two nodes on a network to communicate with each other. The first node(socket fd) listens at port 8080 at an IP while the other node (socket new_fd) reaches out to the other to form a connection
 // Server makes the listening socket 
 
-int net_server() {
+int main(int argc, char const* argv[]) {
 
     unsigned short port = 8080;
 
@@ -34,13 +35,13 @@ int net_server() {
     // helps manipulate options for fd; prevents "address already in use" errors
     int option = 1;
 
-    if(setsockopt(fd, IPPROTO_TCP, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))){
+    if(!setsockopt(fd, IPPROTO_TCP, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))){
         perror("setsockopt failed");
         exit(EXIT_FAILURE);
     }
 
     // binds a name to my socket fd (socket, points to sockaddr structure containing the address to the bound socket, specifies the length of the sockaddr structure pointed to by the address argument)
-    if(!(bind(fd, (struct sockaddr_in*)&addr, addr_l))) {
+    if(bind(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
@@ -50,33 +51,42 @@ int net_server() {
 
     // maximum kernel backlog -> 128 
     // backlog: number representing the size of the queue holding the pending connections while the server is waiting to accept a connection.
-    if(!listen(fd, 2)){
+    if(listen(fd, 3) < 0){
         perror("listen failure");
         exit(EXIT_FAILURE);
     }
     
     // accept extracts the first connection on the queue of pending connections, creates a new socket with the same socket type protocol and address family as the specificied socket, and allocates a new file descriptor for that socket
-    int new_fd = accept(fd, (struct sockaddr_in*)&addr, &addr_l);
-    if(!new_fd){
-        perror("accept failure");
-        exit(EXIT_FAILURE);
+    while(1){
+        int new_fd = accept(fd, (struct sockaddr*)&addr, &addr_l);
+
+        if(new_fd < 0){
+            perror("accept failure");
+            exit(EXIT_FAILURE);
+            return -1;
+        }else{
+            // ssize_t -> signed int type representing a count of bytes and returns -1
+            // read attempts to read byte data from fd socket into the buffer queue; subtracting 1 from total buffer for null
+            ssize_t read_data = read(new_fd, buffer, 1024 - 1);
+            printf("%s\n", buffer);
+
+            // sending data to the client side (type ssize_t to send data in bytes) as a message
+            char* server_message = "Hello from server";
+            send(new_fd, server_message, strlen(server_message), 0);
+
+            printf("Server message sent\n");
+
+            // connected socket closed
+            close(new_fd);
+        }
     }
-    
-    // ssize_t -> signed int type representing a count of bytes and returns -1
-    // read attempts to read byte data from fd socket into the buffer queue; subtracting 1 from total buffer for null
-    ssize_t read_data = read(fd, buffer, 1024 - 1);
-    printf("%s\n", buffer);
-
-    // sending data to the client side (type ssize_t to send data in bytes) as a message
-    char* server_message = "Hello from server";
-    send(fd, server_message, strlen(server_message), 0);
-
-    printf("Server message sent\n");
-
-    // connected socket closed
-    close(new_fd);
 
     // listen socket closed
     close(fd);
     return 0;
 }
+
+/*
+    fd := listening socket that stays open forever and never SPEAKS to the client but picks up new ones
+    new_fd := accepted socket that acts as a private line SPEAKING directly to client (talks, listens, and hangs up when done)
+*/
