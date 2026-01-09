@@ -7,10 +7,18 @@ struct OpaqueBuffer;
 typedef struct OpaqueBuffer OpaqueBuffer;
 
 // Public API function that creates a new IO buffer instance
-// takes in the size of the internal buffer and returns a pointer to the new buffer
+/*
+* <summary>
+* creation of a new buffer in an empty state
+* <param name="size">total memory capacity of the new buffer<param>
+*/
 OpaqueBuffer* iobuffer_create(size_t size);
 
-// destroys IO buffer instance and frees that space in the memory and takes in the buffer being destroyed
+/*
+* <summary>
+* destroys IO buffer instance and frees that space in the memory
+* <param name="buffer"><param>
+*/
 void iobuffer_destroy(OpaqueBuffer* buffer);
 
 //consumes data from io buffer and takes in the desired buffer, pointer to store the read data, the num of bytes that need to be read, and return the num of bytes actually read
