@@ -7,9 +7,20 @@
 // defining input/output buffer abstraction and establish how bytes are moving across the wire
 // given a socket and a buffer, move bytes
 
+/*
+*              sliding window diagram of buffer memory reading and writing
+*
+* data           -> [...............................] (allocated memory)
+* read_pos       -> ^ start of unread data
+* write_pos      ->           ^ end of written data
+* size           -> total capacity
+*
+*                              free space
+*                [data + read_pos .... data + write_pos]
+*/
 struct OpaqueBuffer{
-    char* data; // allocated memory
-    size_t size; // total capacity
+    char* data; 
+    size_t size; 
     size_t read_pos; // next byte to read
     size_t write_pos; // next byte to write
 };
@@ -40,35 +51,39 @@ OpaqueBuffer* iobuffer_create(size_t size){
     return new_buff;
 }
 
+//write()/send()
 /*
 * <summary>
-* destroys IO buffer instance and frees that space in the memory
+* takes raw bytes from the caller and appends this data to the unread regions of memory
 * <param name="buffer"><param>
+* <param name="data"><param>
+* <param name="write_bytes"><param>
 */
-void iobuffer_destroy(OpaqueBuffer* buffer){
+size_t iobuffer_write(OpaqueBuffer* buff, const void* data, size_t write_bytes){\
+    memcpy(buff->data + buff->write_pos, data, write_bytes);
 
 }
+
 
 // read()/recv()
 
 /*
 * <summary>
+* copy the byte from new_buff into user memory and advance the read pointer
 * <param name="buffer"><param>
 * <param name="data"><param>
 * <param name="read_bytes"><param>
 */
-size_t iobuffer_read(OpaqueBuffer* buffer, void* data, size_t read_bytes){
+size_t iobuffer_read(OpaqueBuffer* new_buff, void* data, size_t read_bytes){
     
 }
 
-//write()/send()
-
 /*
 * <summary>
+* destroys IO buffer instance and frees that space in the memory
 * <param name="buffer"><param>
-* <param name="data"><param>
-* <param name="write_bytes"><param>
 */
-size_t iobuffer_write(OpaqueBuffer* buffer, const void* data, size_t write_bytes){
-
+void iobuffer_destroy(OpaqueBuffer* new_buff){
+    free(new_buff->data);
+    free(new_buff);
 }
